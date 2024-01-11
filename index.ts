@@ -1,54 +1,51 @@
-import { Poker } from '@/poker';
-import { getScore } from '@@/util/score';
+import * as inquirer from 'inquirer';
+
 import logger from '@@/util/logger';
+import { isPosiInt } from '@@/util/number';
+import { runBankerRounds } from './banker-score';
 
-const getOneResult = () => {
-  const deck = new Poker(4);
+(async () => {
+  const { mode } = await inquirer.prompt([{
+    type: 'list',
+    message: 'select game mode',
+    name: 'mode',
+    choices: [
+      { name: 'get banker results', value: 'banker-results' },
+    ], 
+  }]);
 
-  const bankerCards = [deck.draw()];
+  switch (mode) {
+    case 'banker-results': {
+      const { oRounds } = await inquirer.prompt([{
+        type: 'input',
+        message: 'set banker rounds',
+        name: 'oRounds',
+        default: '10000',
+        validate: (val) => {
+          if (!isPosiInt(+val)) {
+            return 'rounds must be positive integer';
+          }
 
-  while (true) {
-    const score = getScore(bankerCards);
+          return true;
+        },
+      }]);
 
-    if (score >= 17) {
+      const rounds = +oRounds;
+
+      const results = runBankerRounds(rounds);
+
+      logger.log('banker results: ');
+      Object.entries(results).forEach(([score, count]) => {
+        logger.log(
+          score,
+          '---',
+          `${(count / rounds) * 100}%`,
+        );
+      });
+
       break;
     }
-
-    bankerCards.push(deck.draw());
   }
-
-  const score = getScore(bankerCards);
-
-  return score;
-}
-
-const results = {
-  17: 0,
-  18: 0,
-  19: 0,
-  20: 0,
-  21: 0,
-  22: 0,
-}
-
-let round = 1000000;
-
-while (round--) {
-  let score = getOneResult();
-  if (score > 21) {
-    score = 22;
-  }
-
-  results[score] += 1;
-}
-
-Object.entries(results).forEach(([score, count]) => {
-  logger.log(
-    score,
-    `${(count / 1000000) * 100}%`,
-  );
-});
-
-
+})();
 
 
