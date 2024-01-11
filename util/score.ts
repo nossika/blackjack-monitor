@@ -1,4 +1,4 @@
-import { Card } from '@/poker';
+import { Card, CardFigure } from '@/poker';
 
 /**
  * 计算牌面对应的点数
@@ -7,20 +7,36 @@ import { Card } from '@/poker';
  * 2 ～ 9：按对应点数计 【硬牌】
  * 10 ～ K：计为 10 【硬牌】
  */
-export const getPoint = (figure: number): number | [number, number] => {
-  if (figure === 1) {
+export const getPoint = (figure: CardFigure): number | [number, number] => {
+  if (figure === CardFigure.Ace) {
     return [1, 11];
   }
 
-  if (figure >= 2 && figure <= 9) {
-    return figure;
+  if (
+    [
+      CardFigure.Two,
+      CardFigure.Three,
+      CardFigure.Four,
+      CardFigure.Five,
+      CardFigure.Six,
+      CardFigure.Seven,
+      CardFigure.Eight,
+      CardFigure.Nine,
+    ].includes(figure)
+  ) {
+    return +figure;
   }
 
-  if (figure >= 10 && figure <= 13) {
+  if (
+    [
+      CardFigure.Ten,
+      CardFigure.Jack,
+      CardFigure.Queen,
+      CardFigure.King,
+    ].includes(figure)
+  ) {
     return 10;
   }
-
-  throw new Error(`Invalid figure: ${figure}`);
 }
 
 export const WIN_SCORE = 21;
@@ -31,14 +47,14 @@ export const WIN_SCORE = 21;
  * 有软牌的情况：未超过 21 点时，尽可能按最大点数计算软牌
  */
 export const getScore = (cards: Card[]) => {
-  const softCards = cards.filter(card => card.figure === 1);
-  const hardCards = cards.filter(card => card.figure !== 1);
+  const softCards = cards.filter(card => card.figure === CardFigure.Ace);
+  const hardCards = cards.filter(card => card.figure !== CardFigure.Ace);
 
   let hardScore = hardCards.reduce((score, card) => score + (getPoint(card.figure) as number), 0);
 
   const getSoftScore = (count: number, maxCount: number) => {
     let score = 0;
-    const [min, max] = getPoint(1) as [number, number];
+    const [min, max] = getPoint(CardFigure.Ace) as [number, number];
 
     for (let i = 0; i < count; i++) {
       score += (maxCount-- > 0) ? max : min;
@@ -54,4 +70,13 @@ export const getScore = (cards: Card[]) => {
   }
 
   return hardScore + getSoftScore(softCards.length, softMaxCount);
+};
+
+/**
+ * 计算庄家是否继续拿牌
+ * 
+ * 庄家固定策略：大于等于 17 点（包含软牌）时停牌，否则拿牌
+ */
+export const checkBankerHit = (cards: Card[]) => {
+  return getScore(cards) < 17;
 };
