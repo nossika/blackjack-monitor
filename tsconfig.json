@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": ["DOM", "ES2016", "ES2017"],
+    "target": "es5",
+    "paths": {
+      "@/*": ["./packages/*"],
+      "@@/*": ["./*"]
+    }
+  }
+}
